@@ -4,15 +4,15 @@ import PostList from "./components/PostList";
 import "./App.css";
 
 export default function App() {
-  const [refresh, setRefresh] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const handlePostCreated = () => setRefresh(!refresh);
+  const handlePostCreated = () => setRefreshKey((k) => k + 1);
 
   return (
     <div className="app-container">
       <h1>Facebook API Demo</h1>
       <PostForm onPostCreated={handlePostCreated} />
-      <PostList key={refresh} />
+      <PostList refreshKey={refreshKey} />
     </div>
   );
 }

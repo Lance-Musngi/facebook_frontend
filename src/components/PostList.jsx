@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { getPosts } from "../api";
 
-export default function PostList() {
+export default function PostList({ refreshKey }) {
   const [posts, setPosts] = useState([]);
 
   useEffect(() => {
-    getPosts()
-      .then(data => setPosts(data))
-      .catch(err => console.error("Error fetching posts:", err));
-  }, []);
+    getPosts().then(setPosts);
+  }, [refreshKey]);
 
   return (
     <div>
@@ -17,9 +15,9 @@ export default function PostList() {
         <p>No posts found.</p>
       ) : (
         <ul>
-          {posts.map(post => (
-            <li key={post.id}>
-              <strong>{post.title}</strong> — {post.content}
+          {posts.map((p) => (
+            <li key={p.id}>
+              <strong>{p.title}</strong>: {p.content}
             </li>
           ))}
         </ul>
