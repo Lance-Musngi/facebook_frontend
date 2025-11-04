@@ -1,9 +1,6 @@
 // api.js
+const API_BASE = "https://facebookapi-1-k6yt.onrender.com/api"; // deployed backend
 
-// API base URL: directly points to deployed backend
-const API_BASE = "https://facebookapi-1-k6yt.onrender.com/api";
-
-// Fetch helper with timeout
 async function fetchWithTimeout(url, options = {}, timeout = 60000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
@@ -19,7 +16,6 @@ async function fetchWithTimeout(url, options = {}, timeout = 60000) {
   }
 }
 
-// CRUD API functions
 export async function getPosts(timeout) {
   const res = await fetchWithTimeout(`${API_BASE}/posts`, {}, timeout);
   if (!res.ok) throw new Error('Failed to load posts');
