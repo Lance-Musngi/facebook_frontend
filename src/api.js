@@ -1,8 +1,8 @@
 // Default API base: prefer Vite env var, otherwise use your Render URL fallback
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://facebookapi-1-k6yt.onrender.com/api/posts";
 
-// Helper: fetch with timeout using AbortController. Default timeout 15s.
-async function fetchWithTimeout(url, options = {}, timeout = 15000) {
+// Helper: fetch with timeout using AbortController. Default timeout 60s (helps with slow cold starts).
+async function fetchWithTimeout(url, options = {}, timeout = 60000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
@@ -30,6 +30,7 @@ export async function createPost(post, timeout) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(post),
     },
+    // allow caller to override; default now 60s
     timeout
   );
   if (!res.ok) throw new Error('Failed to create post');
