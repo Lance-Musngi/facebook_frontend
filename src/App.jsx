@@ -1,114 +1,106 @@
-import React, { useEffect, useState } from "react";
-import PostForm from "./components/PostForm";
-import PostList from "./components/PostList";
-import { getPosts, deletePost, createPost, updatePost } from "./api";
-import "./App.css";
+import React, { useEffect, useState } from 'react';
+import PostList from './components/PostList.jsx';
+import PostForm from './components/PostForm.jsx';
+
+const API_URL = "https://facebookpostapi.onrender.com"; // ✅ your backend URL
 
 export default function App() {
   const [posts, setPosts] = useState([]);
   const [editing, setEditing] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  async function loadPosts() {
+  const fetchPosts = async () => {
     setLoading(true);
-    setError(null);
+    setError('');
     try {
-      const data = await getPosts();
-      const sorted = data.sort((a, b) => b.id - a.id); 
-      setPosts(sorted);
-    } catch (err) {
-      console.error("Failed to load posts", err);
-      setError(err.message || "Failed to load posts.");
+      const res = await fetch(`${API_URL}/api/posts`);
+      if (!res.ok) throw new Error('Failed to fetch posts');
+      const data = await res.json();
+      data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)); // newest first
+      setPosts(data);
+    } catch (e) {
+      setError(e.message || 'Error fetching posts');
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    loadPosts();
-    const handlePostsUpdated = () => {
-      loadPosts();
-    };
-    window.addEventListener("posts:updated", handlePostsUpdated);
-    return () => window.removeEventListener("posts:updated", handlePostsUpdated);
+    fetchPosts();
   }, []);
 
-  async function handleCreate(postData, timeout) {
-    try {
-      const newPost = await createPost(postData, timeout);
-      setPosts(prev => [newPost, ...prev]); 
-    } catch (err) {
-      throw err;
+  const handleCreate = async (post) => {
+    const res = await fetch(`${API_URL}/api/posts`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(post)
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(txt || 'Create failed');
     }
-  }
+    const saved = await res.json();
+    setPosts(prev => [saved, ...prev]);
+  };
 
-  async function handleDelete(id) {
-    if (!confirm("Delete this post?")) return;
-    try {
-      await deletePost(id);
-      setPosts(prev => prev.filter(p => p.id !== id));
-    } catch (err) {
-      alert("Failed to delete: " + err.message);
+  const handleUpdate = async (id, updates) => {
+    const res = await fetch(`${API_URL}/api/posts/${id}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(updates)
+    });
+    if (!res.ok) throw new Error('Update failed');
+    const updated = await res.json();
+    setPosts(prev => prev.map(p => p.id === updated.id ? updated : p));
+    setEditing(null);
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this post?')) return;
+    const res = await fetch(`${API_URL}/api/posts/${id}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) {
+      alert('Failed to delete');
+      return;
     }
-  }
-
-  function handleEdit(post) {
-    setEditing(post);
-  }
-
-  async function handleUpdate(updatedPost) {
-    try {
-      const result = await updatePost(updatedPost.id, updatedPost);
-      setPosts(prev => prev.map(p => p.id === result.id ? result : p));
-      setEditing(null); 
-    } catch (err) {
-      alert("Failed to update post: " + err.message);
-    }
-  }
+    setPosts(prev => prev.filter(p => p.id !== id));
+  };
 
   return (
-    <div className="app-container">
-      <header className="app-header">
+    <div className="container">
+      <div className="header">
         <h1>Facebook-like Posts</h1>
-      </header>
+        <div className="small-muted">Simple Vite + React UI</div>
+      </div>
 
-      <main className="app-main">
-        <div className="post-form-wrapper">
-          <PostForm onSubmit={handleCreate} submitLabel="Post" />
-        </div>
-        
-        {error && <div className="error">{error}</div>}
+      <div className="card">
+        <h3 style={{marginTop:0}}>Create a post</h3>
+        <PostForm onSubmit={handleCreate} submitLabel="Post" />
+      </div>
 
-        <section className="post-list">
-          <PostList 
-            posts={posts} 
-            loading={loading} 
-            error={null} 
-            onEdit={handleEdit} 
-            onDelete={handleDelete} 
-            onUpdate={handleUpdate} 
-          />
-        </section>
-      </main>
+      {error && <div className="card" style={{borderLeft:'4px solid #ef4444', color:'#b91c1c'}}>{error}</div>}
 
-      <footer className="app-footer">
-        <p>
-          built with ❤️ — <strong>facebook-posts-ui</strong>
-        </p>
-      </footer>
+      {loading ? (
+        <div className="card small-muted">Loading posts...</div>
+      ) : (
+        <PostList
+          posts={posts}
+          onEdit={(p) => setEditing(p)}
+          onDelete={handleDelete}
+        />
+      )}
 
       {editing && (
-        <div className="modal-backdrop">
-          <div className="modal card">
-            <h3>Edit post</h3>
-            <PostForm
-              initial={editing}
-              onSubmit={handleUpdate}
-              onCancel={() => setEditing(null)}
-              submitLabel="Save"
-            />
-          </div>
+        <div className="card">
+          <h3>Edit post</h3>
+          <PostForm
+            initial={editing}
+            onSubmit={(updates) => handleUpdate(editing.id, updates)}
+            onCancel={() => setEditing(null)}
+            submitLabel="Save"
+          />
         </div>
       )}
     </div>
