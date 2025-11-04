@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import PostForm from "./components/PostForm";
+import PostForm from "./components/PostForm"; // Assuming this exists but wasn't provided
 import { getPosts, deletePost, createPost, updatePost } from "./api";
 import "./App.css";
 
