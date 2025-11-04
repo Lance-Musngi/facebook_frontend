@@ -21,17 +21,22 @@ export default function PostForm() {
 
     try {
       setLoading(true);
-      
-      // Show warning if request takes longer than 5 seconds
+
+      // Show warning if request takes longer than 10 seconds (less noisy for sleeping backends)
       const slowWarningTimer = setTimeout(() => {
         setSlowWarning(true);
-      }, 5000);
+      }, 10000);
 
-      await createPost({
-        author: author.trim(),
-        content: content.trim(),
-        imageUrl: imageUrl.trim() || null,
-      });
+      // Pass an explicit timeout (ms) to the API helper so long requests are aborted predictably.
+      // Use 30s here to allow slow wake-ups but still fail eventually.
+      await createPost(
+        {
+          author: author.trim(),
+          content: content.trim(),
+          imageUrl: imageUrl.trim() || null,
+        },
+        30000
+      );
 
       clearTimeout(slowWarningTimer);
 
@@ -47,7 +52,12 @@ export default function PostForm() {
     } catch (err) {
       console.error(err);
       setSlowWarning(false);
-      setError(err.message || "Failed to create post.");
+      // map timeout to a friendly message
+      if (err.message === 'Request timed out') {
+        setError("Server did not respond in time. It may be waking up — try again in a few seconds.");
+      } else {
+        setError(err.message || "Failed to create post.");
+      }
     } finally {
       setLoading(false);
     }
