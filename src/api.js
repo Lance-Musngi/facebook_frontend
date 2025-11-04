@@ -1,7 +1,9 @@
 // api.js
-const API_BASE = "https://facebookapi-1-k6yt.onrender.com/api"; // deployed backend
+// 🚨 UPDATE: Use your new deployed backend URL
+const API_BASE = "https://facebookapi-5vm5.onrender.com/api"; 
 
-async function fetchWithTimeout(url, options = {}, timeout = 90000) { 
+// UPDATED: Long timeout (120 seconds) to account for Render cold starts
+async function fetchWithTimeout(url, options = {}, timeout = 120000) { 
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
 
@@ -33,7 +35,7 @@ export async function createPost(post, timeout) {
     timeout
   );
   if (!res.ok) {
-    // UPDATED: Read the specific error message from the Spring Boot backend
+    // Captures the specific error text from the server (e.g., validation message)
     const errorText = await res.text();
     throw new Error(errorText || 'Failed to create post');
   }
@@ -56,7 +58,7 @@ export async function updatePost(id, post, timeout) {
     timeout
   );
   if (!res.ok) {
-    // UPDATED: Read the specific error message from the Spring Boot backend
+    // Captures the specific error text from the server (e.g., validation message)
     const errorText = await res.text();
     throw new Error(errorText || 'Failed to update post');
   }
