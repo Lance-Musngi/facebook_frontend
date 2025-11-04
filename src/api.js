@@ -1,10 +1,13 @@
-// Default API base: prefer Vite env var, otherwise use your Render URL fallback
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://facebookapi-1-k6yt.onrender.com/api/posts";
+// api.js
 
-// Helper: fetch with timeout using AbortController. Default timeout 60s (helps with slow cold starts).
+// API base URL: directly points to deployed backend
+const API_BASE = "https://facebookapi-1-k6yt.onrender.com/api";
+
+// Fetch helper with timeout
 async function fetchWithTimeout(url, options = {}, timeout = 60000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
+
   try {
     const res = await fetch(url, { ...options, signal: controller.signal });
     return res;
@@ -16,21 +19,21 @@ async function fetchWithTimeout(url, options = {}, timeout = 60000) {
   }
 }
 
+// CRUD API functions
 export async function getPosts(timeout) {
-  const res = await fetchWithTimeout(API_BASE, {}, timeout);
+  const res = await fetchWithTimeout(`${API_BASE}/posts`, {}, timeout);
   if (!res.ok) throw new Error('Failed to load posts');
   return await res.json();
 }
 
 export async function createPost(post, timeout) {
   const res = await fetchWithTimeout(
-    API_BASE,
+    `${API_BASE}/posts`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(post),
     },
-    // allow caller to override; default now 60s
     timeout
   );
   if (!res.ok) throw new Error('Failed to create post');
@@ -38,13 +41,13 @@ export async function createPost(post, timeout) {
 }
 
 export async function deletePost(id, timeout) {
-  const res = await fetchWithTimeout(`${API_BASE}/${id}`, { method: 'DELETE' }, timeout);
+  const res = await fetchWithTimeout(`${API_BASE}/posts/${id}`, { method: 'DELETE' }, timeout);
   if (!res.ok) throw new Error('Failed to delete post');
 }
 
 export async function updatePost(id, post, timeout) {
   const res = await fetchWithTimeout(
-    `${API_BASE}/${id}`,
+    `${API_BASE}/posts/${id}`,
     {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
