@@ -1,45 +1,40 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { createPost } from "../api";
 
 export default function PostForm({ onPostCreated }) {
-  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     try {
-      await createPost({ title, content });
-      setTitle("");
+      await createPost({ author, content });
+      alert("Post created successfully!");
+      setAuthor("");
       setContent("");
       onPostCreated();
-    } catch {
+    } catch (error) {
       alert("Failed to create post");
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="form">
       <h2>Add a New Post</h2>
       <input
         type="text"
-        placeholder="Title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Author"
+        value={author}
+        onChange={(e) => setAuthor(e.target.value)}
         required
       />
       <textarea
-        placeholder="Content"
+        placeholder="What's on your mind?"
         value={content}
         onChange={(e) => setContent(e.target.value)}
         required
       />
-      <button type="submit" disabled={loading}>
-        {loading ? "Posting..." : "Submit"}
-      </button>
+      <button type="submit">Submit</button>
     </form>
   );
 }

@@ -1,18 +1,29 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import { getPosts } from "./api";
 import PostForm from "./components/PostForm";
 import PostList from "./components/PostList";
 import "./App.css";
 
 export default function App() {
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [posts, setPosts] = useState([]);
 
-  const handlePostCreated = () => setRefreshKey((k) => k + 1);
+  const loadPosts = async () => {
+    try {
+      const data = await getPosts();
+      setPosts(data);
+    } catch (error) {
+      console.error("Error loading posts:", error);
+    }
+  };
+
+  useEffect(() => {
+    loadPosts();
+  }, []);
 
   return (
-    <div className="app-container">
-      <h1>Facebook API Demo</h1>
-      <PostForm onPostCreated={handlePostCreated} />
-      <PostList refreshKey={refreshKey} />
+    <div className="container">
+      <PostForm onPostCreated={loadPosts} />
+      <PostList posts={posts} />
     </div>
   );
 }

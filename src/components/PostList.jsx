@@ -1,26 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { getPosts } from "../api";
-
-export default function PostList({ refreshKey }) {
-  const [posts, setPosts] = useState([]);
-
-  useEffect(() => {
-    getPosts().then(setPosts);
-  }, [refreshKey]);
-
+export default function PostList({ posts }) {
   return (
-    <div>
+    <div className="posts">
       <h2>All Posts</h2>
       {posts.length === 0 ? (
         <p>No posts found.</p>
       ) : (
-        <ul>
-          {posts.map((p) => (
-            <li key={p.id}>
-              <strong>{p.title}</strong>: {p.content}
-            </li>
-          ))}
-        </ul>
+        posts.map((post) => (
+          <div key={post.id} className="post">
+            <h3>{post.author}</h3>
+            <p>{post.content}</p>
+          </div>
+        ))
       )}
     </div>
   );
