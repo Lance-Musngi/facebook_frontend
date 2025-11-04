@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://facebookapi-backend.onrender.com/api/posts";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://facebookapi-1-k6yt.onrender.com/api/posts";
 
 export async function getPosts() {
   const res = await fetch(API_BASE);
