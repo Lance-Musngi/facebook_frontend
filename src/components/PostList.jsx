@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { getPosts, deletePost } from "../api";
+import React, { useState } from "react";
 
 function PostItem({ post, onEdit, onDelete }) {
   return (
@@ -36,65 +35,6 @@ function PostItem({ post, onEdit, onDelete }) {
         </div>
       )}
     </article>
-  );
-}
-
-export default function PostList() {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [editing, setEditing] = useState(null);
-
-  async function load() {
-    setLoading(true);
-    try {
-      const data = await getPosts();
-      data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      setPosts(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  async function handleDelete(id) {
-    if (!confirm("Delete this post?")) return;
-    try {
-      await deletePost(id);
-      await load();
-    } catch (err) {
-      alert("Delete failed: " + err.message);
-    }
-  }
-
-  return (
-    <section className="post-list">
-      <h2>Recent posts</h2>
-      {loading && <div>Loading...</div>}
-      {error && <div className="error">{error}</div>}
-      {!loading && posts.length === 0 && <div>No posts yet!</div>}
-
-      {posts.map((p) => (
-        <PostItem key={p.id} post={p} onEdit={setEditing} onDelete={handleDelete} />
-      ))}
-
-      {editing && (
-        <EditModal
-          post={editing}
-          onCancel={() => setEditing(null)}
-          onSave={async (updated) => {
-            // temporary: you can add an update API later
-            alert("Edit feature not yet implemented.");
-            setEditing(null);
-          }}
-        />
-      )}
-    </section>
   );
 }
 
@@ -147,5 +87,45 @@ function EditModal({ post, onCancel, onSave }) {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function PostList({ posts = [], loading, error, onUpdate, onDelete }) {
+  const [editing, setEditing] = useState(null);
+
+  async function handleDelete(id) {
+    if (!confirm("Delete this post?")) return;
+    onDelete(id);
+  }
+
+  async function handleSave(updatedPost) {
+    await onUpdate(updatedPost); 
+    setEditing(null); 
+  }
+
+  return (
+    <section className="post-list">
+      <h2>Recent posts</h2>
+      {loading && <div>Loading...</div>}
+      {error && <div className="error">{error}</div>}
+      {!loading && posts.length === 0 && <div>No posts yet!</div>}
+
+      {posts.map((p) => (
+        <PostItem 
+          key={p.id} 
+          post={p} 
+          onEdit={setEditing} 
+          onDelete={handleDelete} 
+        />
+      ))}
+
+      {editing && (
+        <EditModal
+          post={editing}
+          onCancel={() => setEditing(null)}
+          onSave={handleSave}
+        />
+      )}
+    </section>
   );
 }

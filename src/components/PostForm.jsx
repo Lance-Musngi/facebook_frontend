@@ -1,11 +1,15 @@
 import React, { useState } from "react";
-import { createPost } from "../api";
 
-export default function PostForm() {
-  const [author, setAuthor] = useState("");
-  const [content, setContent] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [loading, setLoading] = useState(false);
+export default function PostForm({ 
+  initial = {}, 
+  onSubmit, 
+  onCancel, 
+  submitLabel = 'Post'
+}) {
+  const [author, setAuthor] = useState(initial.author || "");
+  const [content, setContent] = useState(initial.content || "");
+  const [imageUrl, setImageUrl] = useState(initial.imageUrl || "");
+  const [busy, setBusy] = useState(false); 
   const [error, setError] = useState(null);
   const [slowWarning, setSlowWarning] = useState(false);
 
@@ -13,6 +17,7 @@ export default function PostForm() {
     e.preventDefault();
     setError(null);
     setSlowWarning(false);
+    let slowWarningTimer;
 
     if (!author.trim() || !content.trim()) {
       setError("Author and content are required.");
@@ -20,16 +25,13 @@ export default function PostForm() {
     }
 
     try {
-      setLoading(true);
+      setBusy(true);
 
-      // Show warning if request takes longer than 10 seconds (less noisy for sleeping backends)
-      const slowWarningTimer = setTimeout(() => {
+      slowWarningTimer = setTimeout(() => {
         setSlowWarning(true);
       }, 10000);
 
-      // Pass an explicit timeout (ms) to the API helper so long requests are aborted predictably.
-      // Use 30s here to allow slow wake-ups but still fail eventually.
-      await createPost(
+      await onSubmit(
         {
           author: author.trim(),
           content: content.trim(),
@@ -40,33 +42,33 @@ export default function PostForm() {
 
       clearTimeout(slowWarningTimer);
 
-      // clear form
-      setAuthor("");
-      setContent("");
-      setImageUrl("");
+      if (!initial.id) {
+        setAuthor("");
+        setContent("");
+        setImageUrl("");
+      }
       setSlowWarning(false);
 
-      // trigger reload for PostList
-      console.log("Dispatching posts:updated event");
-      window.dispatchEvent(new CustomEvent("posts:updated"));
     } catch (err) {
       console.error(err);
+      clearTimeout(slowWarningTimer);
       setSlowWarning(false);
-      // map timeout to a friendly message
+
       if (err.message === 'Request timed out') {
         setError("Server did not respond in time. It may be waking up — try again in a few seconds.");
       } else {
         setError(err.message || "Failed to create post.");
       }
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   }
 
   return (
     <form className="post-form card" onSubmit={handleSubmit}>
-      <h2>Create post</h2>
+      <h2>{initial.id ? 'Edit Post' : 'Create post'}</h2>
       {error && <div className="error">{error}</div>}
+      
       {slowWarning && (
         <div className="warning" style={{color: 'orange', margin: '10px 0'}}>
           ⏳ The server is taking longer than usual to respond. This might be because it's "waking up" from sleep mode.
@@ -101,9 +103,14 @@ export default function PostForm() {
       </label>
 
       <div className="actions">
-        <button type="submit" disabled={loading}>
-          {loading ? "Posting..." : "Post"}
+        <button type="submit" disabled={busy}>
+          {busy ? "Posting..." : submitLabel}
         </button>
+        {onCancel && (
+          <button type="button" onClick={onCancel} className="btn-ghost">
+            Cancel
+          </button>
+        )}
       </div>
     </form>
   );
